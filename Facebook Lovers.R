@@ -6,7 +6,7 @@
 # Step 1: Get your Facebook token and ID
 # Go to https://developers.facebook.com/tools/explorer and paste your ID and token below:
 id <- 16410468
-token <- 'CAACEdEose0cBAJtNZCJWGidVinOfcEPXqNDwdlmCyWo21jCZBEU6ri6slTWrFSGXZBTcM4PNCbG65mKfE2Fab9sNrIzrGpND9tw9WXbrH6rFkxNWQCuzYASuGL7E1f2dNRG3khlwyR1s2ZAGFOFVpaKvrbQxF19gKQlLDAjNxj8DA5fJkse9PxsWVZCrTdrQZD'
+token <- 'CAACEdEose0cBAPlT4J5aY1ZADsLhpeXRNOJhCEUweenRVGvIjLZCFmXQSZBnDkCBBuNZAchhI8BnPkoIlcMTnujkvrrGJpYqNPkCbJAGYt6LZA3wCCx5sKho56NoZB7jp9DwduEVvLqLa4WOetX7UiPN4ULUFNpoZAZBIcBZCe9n3xIMiFJZApZBBLb1wbldh6dHYQZD'
 
 # Step 2: Get a list of my friends and return information about their location and their significant other.
 library(RCurl)
@@ -54,7 +54,7 @@ getGeoCodes <- function(location_vec) {
     u <- paste(root, return.call, "?address=", address, "&sensor=", sensor, sep = "")
     return(URLencode(u))
   }
-  geoCode <- function(address,verbose=FALSE) { #This is the function to get the latitude and longitude of each address (API Call)
+  geoCode <- function(address,verbose=FALSE) { #This is the function to get the latitude and longitude of each address
     if(verbose) cat(address,"\n")
     u <- url(address)
     doc <- getURL(u)
@@ -70,7 +70,7 @@ getGeoCodes <- function(location_vec) {
     }
   }
   i <- 1
-  lat_long_vec <- matrix(rep('NA',length(raw$friends$data)*2),length(raw$friends$data),2)
+  lat_long_vec <- matrix(rep('NA',length(rel_vec2)),length(rel_vec2)/2,2)
   for (i in 1:length(location_vec[,1])) {
     lat_long_vec[i,] <- geoCode(location_vec[i,1])
   } 
@@ -78,9 +78,17 @@ getGeoCodes <- function(location_vec) {
 }
 
 location_vec <- getGeoCodes(rel_vec2)
-final_vec <- cbind(rel_vec2,location_vec)
+final_vec <- as.data.frame(cbind(rel_vec2,location_vec))
+names(final_vec) <- c('city','relationship_status','lan','lon')
+final_vec$V4 <- as.double(final_vec$V4)
+final_vec$V3 <- as.double(final_vec$V3)
 
 # Step 5 - Plot in Google Maps
+
+lovers_map <- ggmap(get_googlemap(center = c(lon = 0, lat = 0), zoom=1, maptype='hybrid')) +
+  geom_point(data=final_vec,aes(x=V4,y=V3,factor=V2))+ 
+  theme(legend.position = "none")
+lovers_map
 
 # I'd like to make the points in the world map proportional to the number of friends I have in each city. Could I make the map scrollable?
 
