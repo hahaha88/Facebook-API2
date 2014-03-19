@@ -6,7 +6,7 @@
 # Step 1: Get your Facebook token and ID
 # Go to https://developers.facebook.com/tools/explorer and paste your ID and token below:
 id <- 16410468
-token <- 'CAACEdEose0cBAPlT4J5aY1ZADsLhpeXRNOJhCEUweenRVGvIjLZCFmXQSZBnDkCBBuNZAchhI8BnPkoIlcMTnujkvrrGJpYqNPkCbJAGYt6LZA3wCCx5sKho56NoZB7jp9DwduEVvLqLa4WOetX7UiPN4ULUFNpoZAZBIcBZCe9n3xIMiFJZApZBBLb1wbldh6dHYQZD'
+token <- 'CAACEdEose0cBAE2ckMspC86wWCuqQP45uzvPCA8nL3YnTldd52kZAN0L1S1fZBYFNWTtZBXEjWyV0Y1YkgXKAGgn187Y4n4NLSpc1Ef6uq0ZAOV8W9H8WZBFthQG7yNtZAt18fcpUYoglJzxM7wCfO6FHNothRdB4ONbUFOOWxBEfmkkJy5WBnftCV714p9dMZD'
 
 # Step 2: Get a list of my friends and return information about their location and their significant other.
 library(RCurl)
@@ -21,17 +21,31 @@ okcupid <- function() {
   i <- 1
   j <- 1
   lovers_vec <- matrix(rep('NA',length(raw$friends$data)*2),length(raw$friends$data),2) #The number of rows in the matrix is at most the number of friends I have. We remove the NA columns later.
-  for(i in 1:length(raw$friends$data)) {
-    if (is.null(raw$friends$data[[i]]$location$id) == TRUE |
-        is.null(raw$friends$data[[i]]$relationship_status) == TRUE) {
-      i <- i+1
+  if (nrow(as.data.frame(raw$friends$data[1])) == 1) {
+    for(i in 1:length(raw$friends$data)) {
+      if (is.null(raw$friends$data[[i]]$location$id) == TRUE |
+            is.null(raw$friends$data[[i]]$relationship_status) == TRUE) {
+        i <- i+1
+      } else {
+        lovers_vec[j,] <- c(raw$friends$data[[i]]$location$name,raw$friends$data[[i]]$relationship_status)
+        j <- j+1
+        i <- i+1
+        }
+      }
     } else {
-      lovers_vec[j,] <- c(raw$friends$data[[i]]$location$name,raw$friends$data[[i]]$relationship_status)
-      j <- j+1
-      i <- i+1
+      for(i in 1:length(raw$friends$data)) {
+        if (is.null(as.data.frame(raw$friends$data[i])["name","location"]) == TRUE |
+            is.null(as.data.frame(raw$friends$data[i])["name","relationship_status"]) == TRUE) {
+          i <- i+1
+        } else {
+          lovers_vec[j,] <- c(raw$friends$data[[i]]$location['name'],
+                              raw$friends$data[[i]]$relationship_status)
+          j <- j+1
+          i <- i+1
+        }
+      }
     }
-  }
-  return (lovers_vec)
+    return (lovers_vec)
 }
 okcupid()
 rel_vec <- okcupid()
@@ -48,7 +62,7 @@ library(RCurl)
 library(RJSONIO)
 library(plyr)
 
-getGeoCodes <- function(location_vec) {
+getGeoCodes <- function(relationship_vec) {
   url <- function(address, return.call = "json", sensor = "false") { #This is the function to get the URL of each address (city name)
     root <- "http://maps.google.com/maps/api/geocode/"
     u <- paste(root, return.call, "?address=", address, "&sensor=", sensor, sep = "")
@@ -60,36 +74,106 @@ getGeoCodes <- function(location_vec) {
     doc <- getURL(u)
     x <- fromJSON(doc)
     if(x$status=="OK") {
-      lat <- x$results[[1]]$geometry$location$lat
-      lng <- x$results[[1]]$geometry$location$lng
-      location_type <- x$results[[1]]$geometry$location_type
-      formatted_address <- x$results[[1]]$formatted_address
+      lat <- x$results[[1]]$geometry$location['lat'] #42.37362
+      lng <- x$results[[1]]$geometry$location['lng']
       return(c(lat,lng))
     } else {
       return(c(NA,NA))
     }
   }
   i <- 1
-  lat_long_vec <- matrix(rep('NA',length(rel_vec2)),length(rel_vec2)/2,2)
-  for (i in 1:length(location_vec[,1])) {
-    lat_long_vec[i,] <- geoCode(location_vec[i,1])
+  lat_long_vec <- matrix(rep('NA',length(relationship_vec)*2),nrow=length(relationship_vec),ncol=2)
+  for (i in 1:length(relationship_vec)) {
+    lat_long_vec[i,] <- geoCode(relationship_vec[i])
+    i <- i+1
   } 
+  for (i in 1:length(relationship_vec)) {
+    if(is.na(lat_long_vec[i,1]) == FALSE) {
+      i <- i+1
+    } else {
+      lat_long_vec[i,] <- geoCode(relationship_vec[i])
+      i <- i+1
+    }
+  }
+  for (i in 1:length(relationship_vec)) {
+    if(is.na(lat_long_vec[i,1]) == FALSE) {
+      i <- i+1
+    } else {
+      lat_long_vec[i,] <- geoCode(relationship_vec[i])
+      i <- i+1
+    }
+  }
+  for (i in 1:length(relationship_vec)) {
+    if(is.na(lat_long_vec[i,1]) == FALSE) {
+      i <- i+1
+    } else {
+      lat_long_vec[i,] <- geoCode(relationship_vec[i])
+      i <- i+1
+    }
+  }
+  for (i in 1:length(relationship_vec)) {
+    if(is.na(lat_long_vec[i,1]) == FALSE) {
+      i <- i+1
+    } else {
+      lat_long_vec[i,] <- geoCode(relationship_vec[i])
+      i <- i+1
+    }
+  }
+  for (i in 1:length(relationship_vec)) {
+    if(is.na(lat_long_vec[i,1]) == FALSE) {
+      i <- i+1
+    } else {
+      lat_long_vec[i,] <- geoCode(relationship_vec[i])
+      i <- i+1
+    }
+  }
+  for (i in 1:length(relationship_vec)) {
+    if(is.na(lat_long_vec[i,1]) == FALSE) {
+      i <- i+1
+    } else {
+      lat_long_vec[i,] <- geoCode(relationship_vec[i])
+      i <- i+1
+    }
+  }
+  for (i in 1:length(relationship_vec)) {
+    if(is.na(lat_long_vec[i,1]) == FALSE) {
+      i <- i+1
+    } else {
+      lat_long_vec[i,] <- geoCode(relationship_vec[i])
+      i <- i+1
+    }
+  }
+  for (i in 1:length(relationship_vec)) {
+    if(is.na(lat_long_vec[i,1]) == FALSE) {
+      i <- i+1
+    } else {
+      lat_long_vec[i,] <- geoCode(relationship_vec[i])
+      i <- i+1
+    }
+  }
+  for (i in 1:length(relationship_vec)) {
+    if(is.na(lat_long_vec[i,1]) == FALSE) {
+      i <- i+1
+    } else {
+      lat_long_vec[i,] <- geoCode(relationship_vec[i])
+      i <- i+1
+    }
+  }
   return(lat_long_vec)
 }
-
-location_vec <- getGeoCodes(rel_vec2)
+location_vec <- getGeoCodes(rel_vec2[,1])
 final_vec <- as.data.frame(cbind(rel_vec2,location_vec))
-names(final_vec) <- c('city','relationship_status','lan','lon')
-final_vec$V4 <- as.double(final_vec$V4)
-final_vec$V3 <- as.double(final_vec$V3)
+names(final_vec) <- c('city','relationship_status','lat','lon')
 
 # Step 5 - Plot in Google Maps
-
-lovers_map <- ggmap(get_googlemap(center = c(lon = 0, lat = 0), zoom=1, maptype='hybrid')) +
-  geom_point(data=final_vec,aes(x=V4,y=V3,factor=V2))+ 
+library(ggmap)
+final_vec$lat <- as.numeric(final_vec$lat)
+final_vec$lon <- as.numeric(final_vec$lon)
+newyork <- ggmap(get_googlemap(center = 'new york', zoom=7,maptype='hybrid'),extent='device') +
+  geom_point(data=final_vec,aes(x=lon,y=lat),colour = 'red',alpha=0.7)+ 
   theme(legend.position = "none")
-lovers_map
 
 # I'd like to make the points in the world map proportional to the number of friends I have in each city. Could I make the map scrollable?
 
 # Where in the world are the highest % of single friends? (Given a location has at least 5 friends) 
+https://www.facebook.com/notes/facebook-engineering/visualizing-friendships/469716398919

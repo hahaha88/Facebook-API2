@@ -6,7 +6,7 @@
 # Get your Facebook token and ID
 # Go to https://developers.facebook.com/tools/explorer and paste your ID and token below:
 id <- 16410468
-token <- 'CAACEdEose0cBABZCNkJ5z7E3CXgk3E5GclxW957kY19EXGAgFXp0RgH70cv3iGd6XcJpqYP9EIiAC2cEqZA4traMtj0cNMDtvCQ384R6AeN4X3zOtK762W3aJzqDszJ56hkPHm7h16Cp2SUYSrOJ4zsZBWde7RUMLejKs0xJQ1hrtlEZCJ1A0SO8JnLDl0QZD'
+token <- 'CAACEdEose0cBAEZA5cuUoPyPFqKNUuSdRdHRrxwZBy3LYP4LFLxMCjgIxZCpx2FhgQKB19SjeDN17zqMekBmiGzWLEZAT86ZBZAt5MZASIER3CDhZCr3IFgBzG51tE3eUqr3vL7Jy17RS1E7DHnND4xxZAiyXzsIasi02QfywZCeg1WCjLB6EyFM6Oy4B9en2LZACUZD'
 
 # Now let's pull this information from the Facebook Graph API into R
 library(RCurl)
@@ -37,23 +37,40 @@ erinspicks <- function() {
   i <- 1
   j <- 1
   erin_vec <- vector(mode = "character")
-  for(i in 1:length(raw$friends$data)) { #Find a way to retrieve the max number of friends
-    if (is.null(as.data.frame(raw$friends$data[i])$gender) == TRUE | 
-        is.null(as.data.frame(raw$friends$data[i])$location.name) == TRUE | 
-        is.null(as.data.frame(raw$friends$data[i])$relationship_status) == TRUE) {
-      i <- i+1
+  if(nrow(as.data.frame(raw$friends$data[1])) == 1) {
+    for(i in 1:length(raw$friends$data)) { #Find a way to retrieve the max number of friends
+      if (is.null(as.data.frame(raw$friends$data[i])$gender) == TRUE | 
+          is.null(as.data.frame(raw$friends$data[i])$location.name) == TRUE | 
+          is.null(as.data.frame(raw$friends$data[i])$relationship_status) == TRUE) {
+        i <- i+1
+      }
+      else if (as.data.frame(raw$friends$data[i])$gender == 'male' & 
+               as.data.frame(raw$friends$data[i])$location.name == 'New York, New York' & 
+               as.data.frame(raw$friends$data[i])$relationship_status == 'Single') {
+        erin_vec[j] <- c(raw$friends$data[[i]]$name)
+        j <- j+1
+        i <- i+1
+      }
+      else {
+        i <- i+1
+      }   
     }
-    else if (as.data.frame(raw$friends$data[i])$gender == 'male' & 
-             as.data.frame(raw$friends$data[i])$location.name == 'New York, New York' & 
-             as.data.frame(raw$friends$data[i])$relationship_status == 'Single') {
-      erin_vec[j] <- c(raw$friends$data[[i]]$name)
-      j <- j+1
-      i <- i+1
+  } else {
+    for(i in 1:length(raw$friends$data)) {
+      if (is.null(as.data.frame(raw$friends$data[i])["name","gender"]) == TRUE | 
+          is.null(as.data.frame(raw$friends$data[i])["name","location"]) == TRUE | 
+          is.null(as.data.frame(raw$friends$data[i])["name","relationship_status"]) == TRUE) {
+        i <- i+1
+      }
+      else if (as.data.frame(raw$friends$data[i])["name","gender"] == 'male' &
+               as.data.frame(raw$friends$data[i])["name","location"] == 'New York, New York' &
+               as.data.frame(raw$friends$data[i])["name","relationship_status"] == 'Single') {
+          erin_vec[j] <- c(raw$friends$data[[i]]$name)
+          j <- j+1
+          i <- i+1
+        }
+      }
     }
-    else {
-      i <- i+1
-    }   
-  }
   return(erin_vec)
 }
 erinspicks()
