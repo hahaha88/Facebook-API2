@@ -168,8 +168,81 @@ names(final_vec) <- c('city','relationship_status','lat','lon')
 levels(final_vec$relationship_status)
 levels(final_vec$city)
 
-# Step 5 - Use Shiny to plot data
-install.packages("shiny")
-library(shiny)
-shiny::runGitHub('shiny_example', 'hahaha88')
-https://github.com/jcheng5/leaflet-shiny/tree/master/inst/example
+final_vec$lat <- as.numeric(as.character(final_vec$lat))
+final_vec$lon <- as.numeric(as.character(final_vec$lon))
+final_vec
+
+# Step 5 - Create Pie Charts and Continental Maps to Visualize Results
+
+#Look at a summary of the relationship statuses for all friends, and for those in New York, NY, Brooklyn, NY, and Baldwin, NY
+summary(final_vec)
+summary(subset(final_vec,city=="New York, New York"))
+summary(subset(final_vec,city=="Brooklyn, New York"))
+summary(subset(final_vec,city=="Baldwin, Nassau County, New York" | 
+                         city=="Baldwin Harbor, New York"))
+
+p <- ggplot(final_vec, aes(x = factor(1), fill = factor(relationship_status))) +
+  geom_bar(width = 1) + 
+  coord_polar(theta = "y") +
+  labs(title="Relationship Status")
+print(p)
+
+
+p <- ggplot(subset(final_vec,city=="New York, New York"), aes(x = factor(1), fill = factor(relationship_status))) +
+  geom_bar(width = 1) + 
+  coord_polar(theta = "y") +
+  labs(title="Relationship Status in New York, NY")
+print(p)
+
+p <- ggplot(subset(final_vec,city=="Brooklyn, New York"), aes(x = factor(1), fill = factor(relationship_status))) +
+  geom_bar(width = 1) + 
+  coord_polar(theta = "y") +
+  labs(title="Relationship Status in Brooklyn, NY")
+print(p)
+
+p <- ggplot(subset(final_vec,city=="Baldwin, Nassau County, New York" | 
+                             city=="Baldwin Harbor, New York"), aes(x = factor(1), fill = factor(relationship_status))) +
+  geom_bar(width = 1) + 
+  coord_polar(theta = "y") +
+  labs(title="Relationship Status in Baldwin, NY")
+print(p)
+
+# Now let's plot the results on Google maps. Let's begin with the New York metro
+newyork <- ggmap(get_googlemap(center = 'new york', zoom=10,maptype='roadmap'),extent='device') +
+  geom_point(data=final_vec,aes(x=jitter(lon,factor=2),y=jitter(lat,factor=10),colour = relationship_status),alpha=1) + 
+  theme(legend.position = c(0.85,0.18),
+        legend.background=element_rect(fill="white", colour="white")) + 
+  labs(title='Facebook Friends in New York')
+print(newyork)
+
+# United States
+unitedstates <- ggmap(get_googlemap(center = 'united states', zoom=4,maptype='roadmap'),extent='device') +
+  geom_point(data=final_vec,aes(x=jitter(lon,factor=10),y=jitter(lat,factor=50),colour = relationship_status),alpha=1) + 
+  theme(legend.position = c(0.85,0.18),
+        legend.background=element_rect(fill="white", colour="white")) + 
+        labs(title='Facebook Friends in the United States')
+print(unitedstates)
+
+# Europe
+europe <- ggmap(get_googlemap(center = 'europe', zoom=4,maptype='roadmap'),extent='device') +
+  geom_point(data=final_vec,aes(x=jitter(lon,factor=30),y=jitter(lat,factor=100),colour = relationship_status),alpha=1) + 
+  theme(legend.position = c(0.85,0.18),
+        legend.background=element_rect(fill="white", colour="white")) + 
+  labs(title='Facebook Friends in Europe')
+print(europe)
+
+# Asia
+asia <- ggmap(get_googlemap(center = 'shanghai', zoom=4,maptype='roadmap'),extent='device') +
+  geom_point(data=final_vec,aes(x=jitter(lon,factor=30),y=jitter(lat,factor=100),colour = relationship_status),alpha=1) + 
+  theme(legend.position = c(0.85,0.18),
+        legend.background=element_rect(fill="white", colour="white")) + 
+  labs(title='Facebook Friends in Asia')
+print(asia)
+
+# Australia
+australia <- ggmap(get_googlemap(center = 'australia', zoom=3,maptype='roadmap'),extent='device') +
+  geom_point(data=final_vec,aes(x=jitter(lon,factor=30),y=jitter(lat,factor=100),colour = relationship_status),alpha=1) + 
+  theme(legend.position = c(0.25,0.18),
+        legend.background=element_rect(fill="white", colour="white")) + 
+  labs(title='Facebook Friends in Australia')
+print(australia)
