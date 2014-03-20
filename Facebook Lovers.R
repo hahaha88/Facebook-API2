@@ -6,7 +6,7 @@
 # Step 1: Get your Facebook token and ID
 # Go to https://developers.facebook.com/tools/explorer and paste your ID and token below:
 id <- 16410468
-token <- 'CAACEdEose0cBAE2ckMspC86wWCuqQP45uzvPCA8nL3YnTldd52kZAN0L1S1fZBYFNWTtZBXEjWyV0Y1YkgXKAGgn187Y4n4NLSpc1Ef6uq0ZAOV8W9H8WZBFthQG7yNtZAt18fcpUYoglJzxM7wCfO6FHNothRdB4ONbUFOOWxBEfmkkJy5WBnftCV714p9dMZD'
+token <- 'CAACEdEose0cBAMpprfNR0mxV5D5UE6g2yqvXmK3I6MIZCV3JAWRTPuCAHb6oPJ6ZA0z0lvIgESNto4R05pFcs5oYQNaNesSzsbFmkZCcr7D72nZC9XNNmaSwVJKNftQsnOfwAdumz3Jc9MVbLWZCvJhIUMGoprYrVynHZBuDy0jitukJy9FWbGXRNcmpsXyesZD'
 
 # Step 2: Get a list of my friends and return information about their location and their significant other.
 library(RCurl)
@@ -15,13 +15,14 @@ myfriendsrelationshipsurl <- paste0('https://graph.facebook.com/',id,'?fields=id
 myfriendsrelationshipsinfo <- getURL(myfriendsrelationshipsurl)
 raw <-fromJSON(myfriendsrelationshipsinfo)
 
-# Step 3: Create a matrix of the location and relationship status of my friends.
+# Step 3: Collect the city and relationship status of all my friends
+# Note: If someone does not post their relationship status or location, they will be excluded from the collection.
 
-okcupid <- function() {
+relationshipmapping <- function() {
   i <- 1
   j <- 1
-  lovers_vec <- matrix(rep('NA',length(raw$friends$data)*2),length(raw$friends$data),2) #The number of rows in the matrix is at most the number of friends I have. We remove the NA columns later.
-  if (nrow(as.data.frame(raw$friends$data[1])) == 1) {
+  lovers_vec <- matrix(rep('NA',length(raw$friends$data)*2),length(raw$friends$data),2) #We remove the NA columns later.
+  if (nrow(as.data.frame(raw$friends$data[1])) == 1) { #Like before, it is possible data will be in one row.
     for(i in 1:length(raw$friends$data)) {
       if (is.null(raw$friends$data[[i]]$location$id) == TRUE |
             is.null(raw$friends$data[[i]]$relationship_status) == TRUE) {
@@ -32,7 +33,7 @@ okcupid <- function() {
         i <- i+1
         }
       }
-    } else {
+    } else { #If the results are in two columns
       for(i in 1:length(raw$friends$data)) {
         if (is.null(as.data.frame(raw$friends$data[i])["name","location"]) == TRUE |
             is.null(as.data.frame(raw$friends$data[i])["name","relationship_status"]) == TRUE) {
@@ -47,8 +48,8 @@ okcupid <- function() {
     }
     return (lovers_vec)
 }
-okcupid()
-rel_vec <- okcupid()
+relationshipmapping()
+rel_vec <- relationshipmapping()
 rel_vec2 <- matrix(rel_vec[rel_vec[,1]!="NA"],ncol=2,byrow=F) #This is where we remove the NA columns
 rel_vec2
 
@@ -62,8 +63,8 @@ library(RCurl)
 library(RJSONIO)
 library(plyr)
 
-getGeoCodes <- function(relationship_vec) {
-  url <- function(address, return.call = "json", sensor = "false") { #This is the function to get the URL of each address (city name)
+getGeoCodes <- function(relationship_vec) { #This is the function to get the URL of each address in Google Maps
+  url <- function(address, return.call = "json", sensor = "false") {
     root <- "http://maps.google.com/maps/api/geocode/"
     u <- paste(root, return.call, "?address=", address, "&sensor=", sensor, sep = "")
     return(URLencode(u))
@@ -74,7 +75,7 @@ getGeoCodes <- function(relationship_vec) {
     doc <- getURL(u)
     x <- fromJSON(doc)
     if(x$status=="OK") {
-      lat <- x$results[[1]]$geometry$location['lat'] #42.37362
+      lat <- x$results[[1]]$geometry$location['lat']
       lng <- x$results[[1]]$geometry$location['lng']
       return(c(lat,lng))
     } else {
@@ -83,12 +84,12 @@ getGeoCodes <- function(relationship_vec) {
   }
   i <- 1
   lat_long_vec <- matrix(rep('NA',length(relationship_vec)*2),nrow=length(relationship_vec),ncol=2)
-  for (i in 1:length(relationship_vec)) {
+  for (i in 1:length(relationship_vec)) { #Here's the loop where we collect latitude and longitude
     lat_long_vec[i,] <- geoCode(relationship_vec[i])
     i <- i+1
   } 
-  for (i in 1:length(relationship_vec)) {
-    if(is.na(lat_long_vec[i,1]) == FALSE) {
+  for (i in 1:length(relationship_vec)) { #Unfortunately, there are many NAs (missing data) collected the first time around.
+    if(is.na(lat_long_vec[i,1]) == FALSE) { #Repeating this four loop several times is the easiest solution to collect data.
       i <- i+1
     } else {
       lat_long_vec[i,] <- geoCode(relationship_vec[i])
@@ -162,18 +163,13 @@ getGeoCodes <- function(relationship_vec) {
   return(lat_long_vec)
 }
 location_vec <- getGeoCodes(rel_vec2[,1])
-final_vec <- as.data.frame(cbind(rel_vec2,location_vec))
+final_vec <- as.data.frame(cbind(rel_vec2,location_vec)) #Combine the relationship vector with the latitude and longitude vector
 names(final_vec) <- c('city','relationship_status','lat','lon')
+levels(final_vec$relationship_status)
+levels(final_vec$city)
 
-# Step 5 - Plot in Google Maps
-library(ggmap)
-final_vec$lat <- as.numeric(final_vec$lat)
-final_vec$lon <- as.numeric(final_vec$lon)
-newyork <- ggmap(get_googlemap(center = 'new york', zoom=7,maptype='hybrid'),extent='device') +
-  geom_point(data=final_vec,aes(x=lon,y=lat),colour = 'red',alpha=0.7)+ 
-  theme(legend.position = "none")
-
-# I'd like to make the points in the world map proportional to the number of friends I have in each city. Could I make the map scrollable?
-
-# Where in the world are the highest % of single friends? (Given a location has at least 5 friends) 
-https://www.facebook.com/notes/facebook-engineering/visualizing-friendships/469716398919
+# Step 5 - Use Shiny to plot data
+install.packages("shiny")
+library(shiny)
+shiny::runGitHub('shiny_example', 'hahaha88')
+https://github.com/jcheng5/leaflet-shiny/tree/master/inst/example

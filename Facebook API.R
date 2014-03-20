@@ -37,8 +37,8 @@ erinspicks <- function() {
   i <- 1
   j <- 1
   erin_vec <- vector(mode = "character")
-  if(nrow(as.data.frame(raw$friends$data[1])) == 1) {
-    for(i in 1:length(raw$friends$data)) { #Find a way to retrieve the max number of friends
+  if(nrow(as.data.frame(raw$friends$data[1])) == 1) { #Facebook's API changes constantly, sometimes the results are one column.
+    for(i in 1:length(raw$friends$data)) {
       if (is.null(as.data.frame(raw$friends$data[i])$gender) == TRUE | 
           is.null(as.data.frame(raw$friends$data[i])$location.name) == TRUE | 
           is.null(as.data.frame(raw$friends$data[i])$relationship_status) == TRUE) {
@@ -55,8 +55,8 @@ erinspicks <- function() {
         i <- i+1
       }   
     }
-  } else {
-    for(i in 1:length(raw$friends$data)) {
+  } else { 
+    for(i in 1:length(raw$friends$data)) { #If the results are in two columns
       if (is.null(as.data.frame(raw$friends$data[i])["name","gender"]) == TRUE | 
           is.null(as.data.frame(raw$friends$data[i])["name","location"]) == TRUE | 
           is.null(as.data.frame(raw$friends$data[i])["name","relationship_status"]) == TRUE) {
